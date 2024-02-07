@@ -1,37 +1,27 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from enum import Enum
-from django_enumfield import enum
 
-
-class LoaiThanhToan(Enum):
-    PAYPAL = 1
-    STRIPE = 2
-    MOMO = 3
-    ZALOPAY = 4
-    CASH = 5
 
 # Create your models here.
 
 class User(AbstractUser):
     avatar = models.ImageField(upload_to='%Y/%m', null=False)
-    ten = models.CharField(max_length=100)
-    email = models.CharField()
-    sdt = models.CharField()
+    sdt = models.CharField(max_length=20, null=False)
 
     def __str__(self):
-        return self.ten + ' ' + self.email + ' ' + self.sdt
+        return self.username + ' ' + self.email + ' ' + self.sdt
 
 
 class Shop(User):
-    diaDiem = models.CharField()
+    diaDiem = models.CharField(max_length=255)
     isValid = models.BooleanField(default=False)
-    user = models.ManyToManyField(User, related_name='user')
-    tienVanChuyen = models.IntegerField(null=False)
+    user = models.ManyToManyField(User, related_name='shops')
+    tienVanChuyen = models.FloatField(null=False)
 
 
 class BaseModel(models.Model):
-    ten = models.CharField()
+    ten = models.CharField(max_length=50)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
@@ -43,22 +33,35 @@ class BaseModel(models.Model):
 
 
 class Menu(BaseModel):
-    shop = models.ForeignKey(Shop, models.SET_NULL, related_name='shop')
+    shop = models.ForeignKey(Shop, models.CASCADE, related_name='menus')
 
 
 class Dish(BaseModel):
-    shop = models.ForeignKey(Shop, models.SET_NULL, related_name='shop')
-    menu = models.ManyToManyField(Menu, related_name='menu')
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='dishes')
+    menu = models.ManyToManyField(Menu, related_name='dishes')
+    tienThucAn = models.FloatField(null=True)
+    isAvailable = models.BooleanField(default=True)
+
+    class Buoi(models.TextChoices):
+        SANG = 'SANG'
+        TRUA = 'TRUA'
+        CHIEU = 'CHIEU'
+
+    buoi = models.CharField(max_length=5, choices=Buoi, default=Buoi.SANG)
+    chuThich = models.TextField()
 
 
 class Order(models.Model):
-    #tienThanhToan =
-    ten = models.CharField(default='Hoa Don')
+    ten = models.CharField(max_length=50, default='Hoa Don')
     isValid = models.BooleanField(default=False)
-    loaiThanhToan = enum.EnumField(LoaiThanhToan, default=LoaiThanhToan.CASH)
-    ngayOrder = models.DateTimeField(auto_now=True)
-    dish = models.ManyToManyField(Dish, related_name='dish')
 
-    def tinhTienThanhToan(self):
-        #chua viet
-        pass
+    class LoaiThanhToan(models.TextChoices):
+        PAYPAL = 'PAYPAL'
+        STRIPE = 'STRIPE'
+        MOMO = 'MOMO'
+        ZALOPAY = 'ZALOPAY'
+        CASH = 'CASH'
+
+    loaiThanhToan = models.CharField(max_length=7, choices=LoaiThanhToan, default=LoaiThanhToan.CASH)
+    ngayOrder = models.DateTimeField(auto_now=True)
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='orders')
