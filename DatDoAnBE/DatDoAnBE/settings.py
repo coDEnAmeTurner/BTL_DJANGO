@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import cloudinary
 from pathlib import Path
 import pymysql
 
@@ -38,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'DatDoAnBEApp.apps.DatdoanbeappConfig',
+    'rest_framework',
+    'oauth2_provider',
+    'drf_yasg',
+    'cloudinary'
 ]
 
 MIDDLEWARE = [
@@ -129,3 +134,19 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_ROOT = '%s/DatDoAnBEApp/Static' % BASE_DIR
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    )
+}
+
+OAUTH2_PROVIDER = {
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'
+}
+
+cloudinary.config(
+    cloud_name="dymtveeni",
+    api_key="117826738689585",
+    api_secret="IW8hKIZcDy9-uvLEpM6XSsA708U"
+)
