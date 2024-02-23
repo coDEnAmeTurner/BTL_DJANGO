@@ -1,4 +1,4 @@
-from datetime import  datetime
+from datetime import datetime
 
 from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser
@@ -83,11 +83,19 @@ class LoaiThanhToan(models.TextChoices):
     CASH = 'CASH'
 
 
+class Category(models.Model):
+    ten = models.CharField(max_length=255, default='Unknown')
+    shopUser = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cats')
+
+    def __str__(self):
+        return self.ten + '-' + self.shopUser.username
+
+
 class Dish(BaseModel):
     userShop = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dishes')
     tienThucAn = models.FloatField(null=True)
     isAvailable = models.BooleanField(default=True)
-
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='dishes', default='1')
     buoi = models.CharField(max_length=5, choices=Buoi, default=Buoi.SANG)
     chuThich = models.TextField(blank=True)
 

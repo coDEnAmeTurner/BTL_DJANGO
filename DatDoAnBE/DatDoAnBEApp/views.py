@@ -1,6 +1,6 @@
 import json
 
-from django.db.models import Count, Sum, F
+from django.db.models import Count, Sum, F, ExpressionWrapper
 from django.db.models.functions import TruncMonth, TruncDay, ExtractQuarter, ExtractYear, ExtractMonth
 from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, generics, parsers, permissions, status
@@ -51,6 +51,28 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
+class CategoryViewSet(viewsets.ViewSet, generics.CreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    def get_permissions(self):
+        if self.action.__eq__('create'):
+            return [perms.BaseShopPermission()]
+
+        if self.action.__eq__('update-ten'):
+            return [perms.UpdateCategoryPermission()]
+
+        return [permissions.AllowAny()]
+
+    @action(methods=['patch'], detail=True, url_path='update-ten')
+    def update_ten(self, request, pk):
+        cat = self.get_object()
+        cat.ten = request.data.get('ten')
+        cat.save()
+
+        return Response(CategorySerializer(cat).data, status=status.HTTP_200_OK)
+
+
 class DishViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView):
     queryset = Dish.objects.all()
     serializer_class = DishSerializer
@@ -60,7 +82,9 @@ class DishViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView
         if self.action.__eq__('create'):
             return [perms.BaseShopPermission()]
 
-        if self.action.__eq__('update_buoi') or self.action.__eq__('update-trangthai'):
+        if self.action.__eq__('update_buoi') \
+                or self.action.__eq__('update-trangthai') \
+                or self.action.__eq__('update-category'):
             return [perms.UpdateDishPermission()]
 
         if self.action.__eq__('comment_dish') or self.action.__eq__('rate_dish'):
@@ -101,6 +125,20 @@ class DishViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView
         dish.save()
 
         return Response(DishSerializer(dish).data, status=status.HTTP_200_OK)
+
+    @action(methods=['patch'], detail=True, url_path='update-category')
+    def update_category(self, request, pk):
+        dish = self.get_object()
+        reqcat = Category.objects.get(pk=request.data.get('category'))
+
+        if reqcat in dish.userShop.cats.all():
+            dish.category = reqcat
+            dish.save()
+            return Response(DishSerializer(dish).data, status=status.HTTP_200_OK)
+        else:
+            return Response(data={
+                'error': 'requested category is not created by this dish user'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post'], detail=True, url_path='comment-dish')
     def comment_dish(self, request, pk):
@@ -160,26 +198,30 @@ class OrderViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAP
 
     @action(methods=['get'], detail=False, url_path='shop-make-stats')
     def shop_make_stats(self, request):
-        doanhThuTheoMonth = Dish.objects.filter(userShop=7) \
+        doanhThuSPTheoMonth = Dish.objects.filter(userShop=request.user) \
             .annotate(doanhThu=Count('orders__id') * F('tienThucAn'), month=ExtractMonth('orders__ngayOrder')) \
             .values('month', 'ten', 'doanhThu') \
             .order_by('month')
 
-        doanhThuTheoQuy = Dish.objects.filter(userShop=7) \
+        doanhThuSPTheoQuy = Dish.objects.filter(userShop=request.user) \
             .annotate(doanhThu=Count('orders__id') * F('tienThucAn'), quy=ExtractQuarter('orders__ngayOrder')) \
             .values('quy', 'ten', 'doanhThu') \
             .order_by('quy')
 
-        doanhThuTheoNam = Dish.objects.filter(userShop=7) \
+        doanhThuSPTheoNam = Dish.objects.filter(userShop=request.user) \
             .annotate(doanhThu=Count('orders__id') * F('tienThucAn'), nam=ExtractYear('orders__ngayOrder')) \
             .values('nam', 'ten', 'doanhThu') \
             .order_by('nam')
 
-        return Response(data={
-            'doanhThuTheoThang': doanhThuTheoMonth,
-            'doanhThuTheoQuy': doanhThuTheoQuy,
-            'doanhThuTheoNam': doanhThuTheoNam
+        doanhThuCatTheoMonth = {}
 
+        return Response(data={
+            'doanhThuSanPham': {
+                'theoThang': doanhThuSPTheoMonth,
+                'theoQuy': doanhThuSPTheoQuy,
+                'theoNam': doanhThuSPTheoNam
+
+            }
         })
 
     @action(methods=['get'], detail=False, url_path='superuser-make-stats')
@@ -221,12 +263,18 @@ class OrderViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAP
         ).values('nam', 'cuaHang', 'ten', 'tongTien')
 
         return Response(data={
-            'tanSuatTheoThang': tanSuatTheoThang,
-            'tanSuatTheoQuy': tanSuatTheoQuy,
-            'tanSuatTheoNam': tanSuatTheoNam,
-            'tongTienMoiMonTheoThang': tongTienMoiMonTheoThang,
-            'tongTienMoiMonTheoQuy': tongTienMoiMonTheoQuy,
-            'tongTienMoiMonTheoNam': tongTienMoiMonTheoNam,
+            'tansuat': {
+                'theoThang': tanSuatTheoThang,
+                'TheoQuy': tanSuatTheoQuy,
+                'theoNam': tanSuatTheoNam,
+
+            },
+            'tongTien': {
+                'theoThang': tongTienMoiMonTheoThang,
+                'theoQuy': tongTienMoiMonTheoQuy,
+                'theoNam': tongTienMoiMonTheoNam,
+
+            }
 
         })
 

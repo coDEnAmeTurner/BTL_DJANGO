@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
 
-from .models import User, Shop, Dish, Menu, Order, Comment, Rating
+from .models import User, Shop, Dish, Menu, Order, Comment, Rating, Category
 
 
 class UserSerializer(ModelSerializer):
@@ -50,6 +50,23 @@ class OrderSerializer(ModelSerializer):
         order.save()
 
         return order
+
+
+class CategorySerializer(ModelSerializer):
+    class Meta:
+        model = Category
+        fields = '__all__'
+        extra_kwargs={
+            'shopUser': {
+                'read_only': True
+            }
+        }
+
+    def create(self, validated_data):
+        cat = Category(**validated_data)
+        cat.shopUser = self.context['request'].user
+        cat.save()
+        return cat
 
 
 class DishSerializer(ModelSerializer):

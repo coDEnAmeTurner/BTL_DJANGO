@@ -39,11 +39,11 @@ AnTien = {
 }
 
 1111cafe = {
-    "access_token": "263LpzVy3JgTHDts1rbpQecs1cv1IR",
+    "access_token": "rEmh1SvDS28aPXs5DCroRBgoAY56fY",
     "expires_in": 36000,
     "token_type": "Bearer",
     "scope": "read write",
-    "refresh_token": "H1l5gvxOaEutXfJ4DgGbkB127XfvZZ"
+    "refresh_token": "qMllrLPlYKASKKkx1ltsBNXM2VpzgY"
 }
 
 ManwahTaiwaneseHotPotTheGardenMall = {
@@ -55,9 +55,9 @@ ManwahTaiwaneseHotPotTheGardenMall = {
 }
 
 KAICOFFEE_HỒNGBÀNG = {
-    "access_token": "o4VAnonL1pLB9qRcj2EDB363XmsGzI",
+    "access_token": "gDIC4a9leMjMLt2kTyzBASQtbKik7o",
     "expires_in": 36000,
     "token_type": "Bearer",
     "scope": "read write",
-    "refresh_token": "qbfp3N2jqjcpFkbPs8CLBKesCf11dR"
+    "refresh_token": "SdxVSVK04bxPQFqhRPRww9bG1NBBip"
 }

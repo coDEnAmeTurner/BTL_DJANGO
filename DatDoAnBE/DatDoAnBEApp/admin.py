@@ -4,7 +4,7 @@ from django.contrib.auth.models import Permission, ContentType, Group
 
 
 class DishAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ten', 'userShop', 'tienThucAn', 'isAvailable', 'buoi', 'chuThich']
+    list_display = ['pk', 'ten', 'userShop', 'category', 'tienThucAn', 'isAvailable', 'buoi', 'chuThich']
 
 
 class MenuAdmin(admin.ModelAdmin):
@@ -32,11 +32,16 @@ class RatingAdmin(admin.ModelAdmin):
     list_display = ['pk', 'rating', 'dish']
 
 
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'ten', 'shopUser']
+
+
 # Register your models here.
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Shop, ShopAdmin)
 admin.site.register(Menu, MenuAdmin)
+admin.site.register(Category, CategoryAdmin)
 admin.site.register(Dish, DishAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(Comment, CommentAdmin)
