@@ -4,6 +4,7 @@ from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import cloudinary
+from django.utils import timezone
 
 
 # Create your models here.
@@ -103,12 +104,17 @@ class Dish(BaseModel):
         return self.ten
 
 
+class DatMon(models.Model):
+    dish = models.ForeignKey(Dish, models.CASCADE, 'datmons')
+    order = models.ForeignKey('Order', models.CASCADE, 'datmons')
+    soLuong = models.IntegerField(default=1)
+
+
 class Order(models.Model):
-    ngayOrder = models.DateTimeField(auto_now=True)
+    ngayOrder = models.DateTimeField(verbose_name="Date de création", default=timezone.now, null=False)
     isValid = models.BooleanField(default=False)
     loaiThanhToan = models.CharField(max_length=7, choices=LoaiThanhToan, default=LoaiThanhToan.CASH)
     tongTien = models.FloatField(default=0)
-    dish = models.ManyToManyField(Dish, related_name='orders')
     userShop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='orders')
     userConsumer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders', null=True)
 
@@ -117,7 +123,7 @@ class Order(models.Model):
 
     def tinhTongTien(self):
         tienMon = 0
-        for dish in self.dish.all():
-            tienMon += dish.tienThucAn
+        for inst in self.datmons.all():
+            tienMon += inst.dish.tienThucAn * inst.soLuong
 
         return tienMon + self.userShop.tienVanChuyen

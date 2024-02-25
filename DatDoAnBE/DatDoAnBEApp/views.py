@@ -1,5 +1,6 @@
 import json
 
+import cloudinary.uploader
 from django.db.models import Count, Sum, F, ExpressionWrapper
 from django.db.models.functions import TruncMonth, TruncDay, ExtractQuarter, ExtractYear, ExtractMonth
 from django.http import HttpResponse, JsonResponse
@@ -8,11 +9,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from . import perms
-from .models import User, UserType, Shop, Dish, Menu, Order, Comment, Rating
+from .models import *
 from .serializers import *
 
 
-class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
+class UserViewSet(viewsets.ViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     parser_classes = [parsers.MultiPartParser]
@@ -24,12 +25,25 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         if self.action.__eq__('validate_shop'):
             return [perms.ValidateShopPermission()]
 
-        if self.action.__eq__('post_menu'):
-            return [perms.BaseShopPermission()]
-
         return [permissions.AllowAny()]
 
-    @action(methods=['post'], detail=True, url_path='shop')
+    @action(methods=['post'], detail=False, url_path='sign-up')
+    def sign_up(self, request):
+        avatar = request.data['avatar'],
+
+        res = cloudinary.uploader.upload(request.data['avatar'], folder='avatar/')
+
+        user = User.objects.create(
+            first_name=request.data['first_name'],
+            last_name=request.data['last_name'],
+            username=request.data['username'],
+            password=request.data['password'],
+            userType=request.data['userType'],
+            avatar=res['secure_url']
+        )
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+    @action(methods=['post'], detail=True, url_path='shops')
     def create_shop(self, request, pk):
         shop = Shop.objects.create(
             diaDiem=request.data.get('diaDiem'),
@@ -49,6 +63,10 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
             return Response(data={
                 'error': 'this is not a shop'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['get'], url_path='current-user', url_name='current-user', detail=False)
+    def current_user(self, request):
+        return Response(UserSerializer(request.user).data)
 
 
 class CategoryViewSet(viewsets.ViewSet, generics.CreateAPIView):
@@ -90,7 +108,8 @@ class DishViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView
         if self.action.__eq__('comment_dish') or self.action.__eq__('rate_dish'):
             return [perms.CommentDishPermission()]
 
-        return super().get_permissions()
+        # return super().get_permissions()
+        return [permissions.AllowAny()]
 
     def get_queryset(self):
         dishes = self.queryset
@@ -159,13 +178,7 @@ class DishViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView
         return Response(RatingSerializer(rating).data, status=status.HTTP_201_CREATED)
 
 
-class MenuViewSet(viewsets.ViewSet, generics.CreateAPIView):
-    queryset = Menu.objects.all()
-    serializer_class = MenuSerializer
-    permission_classes = [perms.BaseShopPermission]
-
-
-class OrderViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAPIView):
+class OrderViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
@@ -184,10 +197,48 @@ class OrderViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAP
 
         return [permissions.AllowAny()]
 
+    def create(self, request):
+        order = Order.objects.create(
+            userShop_id=request.data['userShop'],
+            userConsumer=request.user,
+            loaiThanhToan=request.data['loaiThanhToan']
+        )
+        datmon = []
+        for inst in request.data['dish']:
+            if Dish.objects.get(pk=inst['id']) in order.userShop.user.dishes.all():
+                datMon = DatMon.objects.create(
+                    dish_id=inst['id'],
+                    order=order,
+                    soLuong=inst['soLuong']
+                )
+                datmon.append(DatMonSerializer(datMon).data)
+        order.tongTien = order.tinhTongTien()
+        order.save()
+        return Response({
+                'order': OrderSerializer(order).data,
+                'datmon': datmon
+            }
+            , status=status.HTTP_201_CREATED
+        )
+
+    @action(methods=['patch'], detail=True, url_path='update-ngayOrder')
+    def update_ngayOrder(self, request, pk):
+        order = self.get_object()
+        order.ngayOrder = datetime(
+            year=request.data['year'],
+            month=request.data['month'],
+            day=request.data['day'],
+            hour=request.data['hour'],
+            minute=request.data['minute'],
+            second=request.data['second']
+        )
+        order.save()
+        return Response(OrderSerializer(order).data)
+
     @action(methods=['patch'], detail=True, url_path='validate-order')
     def validate_order(self, request, pk):
         order = self.get_object()
-        if order.dish.count() != 0:
+        if DatMon.objects.filter(order=order).exists():
             order.isValid = True
             order.save()
             return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
@@ -199,17 +250,17 @@ class OrderViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAP
     @action(methods=['get'], detail=False, url_path='shop-make-stats')
     def shop_make_stats(self, request):
         doanhThuSPTheoMonth = Dish.objects.filter(userShop=request.user) \
-            .annotate(doanhThu=Count('orders__id') * F('tienThucAn'), month=ExtractMonth('orders__ngayOrder')) \
+            .annotate(doanhThu=Sum('datmons__soLuong') * F('tienThucAn'), month=ExtractMonth('datmons__order__ngayOrder')) \
             .values('month', 'ten', 'doanhThu') \
             .order_by('month')
 
         doanhThuSPTheoQuy = Dish.objects.filter(userShop=request.user) \
-            .annotate(doanhThu=Count('orders__id') * F('tienThucAn'), quy=ExtractQuarter('orders__ngayOrder')) \
+            .annotate(doanhThu=Sum('datmons__soLuong') * F('tienThucAn'), quy=ExtractQuarter('datmons__order__ngayOrder')) \
             .values('quy', 'ten', 'doanhThu') \
             .order_by('quy')
 
         doanhThuSPTheoNam = Dish.objects.filter(userShop=request.user) \
-            .annotate(doanhThu=Count('orders__id') * F('tienThucAn'), nam=ExtractYear('orders__ngayOrder')) \
+            .annotate(doanhThu=Sum('datmons__soLuong') * F('tienThucAn'), nam=ExtractYear('datmons__order__ngayOrder')) \
             .values('nam', 'ten', 'doanhThu') \
             .order_by('nam')
 
@@ -277,6 +328,18 @@ class OrderViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAP
             }
 
         })
+
+
+class MenuViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIView):
+    queryset = Menu.objects.all()
+    serializer_class = MenuSerializer
+    permission_classes = [perms.BaseShopPermission]
+
+    def get_permissions(self):
+        if self.action.__eq__('put') or self.action.__eq__('patch'):
+            return [perms.UpdateDishPermission()]
+
+        return super().get_permissions()
 
 
 class CommentViewSet(viewsets.ViewSet, generics.GenericAPIView):

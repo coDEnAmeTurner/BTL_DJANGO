@@ -23,11 +23,11 @@ ThiThu = {
 }
 
 MinhTam = {
-    "access_token": "upRcSIsDiZxpei3qxPW0JjTa2vM72W",
+    "access_token": "pMoagQ7BKudRmZCgMqVTqsGglnWKWl",
     "expires_in": 36000,
     "token_type": "Bearer",
     "scope": "read write",
-    "refresh_token": "SL12GSgjsEgQAQs4X4aJ7Qx3fVGBA2"
+    "refresh_token": "wYw9YGXWXaI1WImXR8gMbzoZOr8aWn"
 }
 
 AnTien = {
@@ -39,11 +39,11 @@ AnTien = {
 }
 
 1111cafe = {
-    "access_token": "rEmh1SvDS28aPXs5DCroRBgoAY56fY",
+    "access_token": "IYiZqNaM4TO2fZ7GbFFkCnGwQ22f2r",
     "expires_in": 36000,
     "token_type": "Bearer",
     "scope": "read write",
-    "refresh_token": "qMllrLPlYKASKKkx1ltsBNXM2VpzgY"
+    "refresh_token": "noFDWptTI33PxQ6B4yDWIcFiD3uY5Z"
 }
 
 ManwahTaiwaneseHotPotTheGardenMall = {
@@ -55,9 +55,9 @@ ManwahTaiwaneseHotPotTheGardenMall = {
 }
 
 KAICOFFEE_HỒNGBÀNG = {
-    "access_token": "gDIC4a9leMjMLt2kTyzBASQtbKik7o",
+    "access_token": "fuDHRkIVT6Tk1bfqkvmT7xCNThx1ct",
     "expires_in": 36000,
     "token_type": "Bearer",
     "scope": "read write",
-    "refresh_token": "SdxVSVK04bxPQFqhRPRww9bG1NBBip"
+    "refresh_token": "gUPiB8ERuaj3xLUxsMO1UoQNlQwfbx"
 }

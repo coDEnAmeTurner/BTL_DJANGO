@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
 
-from .models import User, Shop, Dish, Menu, Order, Comment, Rating, Category
+from .models import *
 
 
 class UserSerializer(ModelSerializer):
@@ -19,37 +19,11 @@ class OrderSerializer(ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-        extra_kwargs = {
-            'tongTien': {
-                'read_only': True
-            },
-            'ngayOrder': {
-                'read_only': True
-            },
-            'isValid': {
-                'read_only': True
-            },
-            'userConsumer': {
-                'read_only': True
-            }
-        }
 
-    def create(self, validated_data):
-        user = self.context['request'].user
-        data = validated_data.copy()
-        order = Order(loaiThanhToan=data['loaiThanhToan'], userShop=data['userShop'])
-        order.userConsumer = user
-        order.save()
-        list = data['dish']
-        userShopDishes = Dish.objects.filter(userShop=order.userShop.pk)
-        for inst in list:
-            if inst in userShopDishes and inst.isAvailable:
-                order.dish.add(inst)
-
-        order.tongTien = order.tinhTongTien()
-        order.save()
-
-        return order
+class DatMonSerializer(ModelSerializer):
+    class Meta:
+        model = DatMon
+        fields = '__all__'
 
 
 class CategorySerializer(ModelSerializer):

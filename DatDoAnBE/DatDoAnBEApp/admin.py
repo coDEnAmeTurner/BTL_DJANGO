@@ -24,6 +24,10 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ['ngayOrder']
 
 
+class DatMonAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'dish', 'order_id', 'soLuong']
+
+
 class CommentAdmin(admin.ModelAdmin):
     list_display = ['pk', 'dish', 'parentComment']
 
@@ -44,6 +48,7 @@ admin.site.register(Menu, MenuAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Dish, DishAdmin)
 admin.site.register(Order, OrderAdmin)
+admin.site.register(DatMon, DatMonAdmin)
 admin.site.register(Comment, CommentAdmin)
 admin.site.register(Rating, RatingAdmin)
 admin.site.register(Permission)
