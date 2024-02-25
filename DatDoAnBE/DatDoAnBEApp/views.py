@@ -69,6 +69,27 @@ class UserViewSet(viewsets.ViewSet):
         return Response(UserSerializer(request.user).data)
 
 
+class ShopViewSet(viewsets.ViewSet, generics.GenericAPIView):
+    queryset = Shop.objects.all()
+    serializer_class = ShopSerializer
+
+    @action(methods=['get'], url_path='list-shop', detail=False)
+    def list_shop(self, request):
+        shops = Shop.objects.all()
+        res = []
+        for shop in shops:
+            data = {}
+            data.update(
+                id=shop.pk,
+                ten=shop.user.username,
+                diadiem=shop.diaDiem,
+                isValid=shop.isValid,
+                tienVanChuyen=shop.tienVanChuyen
+            )
+            res.append(data)
+        return Response(data=res, status=status.HTTP_200_OK)
+
+
 class CategoryViewSet(viewsets.ViewSet, generics.CreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -177,6 +198,33 @@ class DishViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView
 
         return Response(RatingSerializer(rating).data, status=status.HTTP_201_CREATED)
 
+    @action(methods=['get'], detail=False, url_path='tim-kiem-dish')
+    def tim_kiem_dish(self, request):
+        dishes = self.queryset.all()
+        name = request.query_params.get('name')
+        shopName = request.query_params.get('shopName')
+        catName = request.query_params.get('catName')
+
+        if name:
+            dishes = dishes.filter(ten__icontains=name).all()
+        if shopName:
+            dishes = dishes.filter(userShop__username__icontains=shopName).all()
+        if catName:
+            dishes = dishes.filter(category__ten__icontains=catName).all()
+
+        res = []
+        for d in dishes.all():
+            data = {}
+            data.update(
+                id=d.pk,
+                Mon=d.ten,
+                Shop=d.userShop.username,
+                TrangThai=d.isAvailable
+            )
+            res.append(data)
+
+        return Response(data=res, status=status.HTTP_200_OK)
+
 
 class OrderViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
     queryset = Order.objects.all()
@@ -215,9 +263,9 @@ class OrderViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
         order.tongTien = order.tinhTongTien()
         order.save()
         return Response({
-                'order': OrderSerializer(order).data,
-                'datmon': datmon
-            }
+            'order': OrderSerializer(order).data,
+            'datmon': datmon
+        }
             , status=status.HTTP_201_CREATED
         )
 
@@ -250,12 +298,14 @@ class OrderViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
     @action(methods=['get'], detail=False, url_path='shop-make-stats')
     def shop_make_stats(self, request):
         doanhThuSPTheoMonth = Dish.objects.filter(userShop=request.user) \
-            .annotate(doanhThu=Sum('datmons__soLuong') * F('tienThucAn'), month=ExtractMonth('datmons__order__ngayOrder')) \
+            .annotate(doanhThu=Sum('datmons__soLuong') * F('tienThucAn'),
+                      month=ExtractMonth('datmons__order__ngayOrder')) \
             .values('month', 'ten', 'doanhThu') \
             .order_by('month')
 
         doanhThuSPTheoQuy = Dish.objects.filter(userShop=request.user) \
-            .annotate(doanhThu=Sum('datmons__soLuong') * F('tienThucAn'), quy=ExtractQuarter('datmons__order__ngayOrder')) \
+            .annotate(doanhThu=Sum('datmons__soLuong') * F('tienThucAn'),
+                      quy=ExtractQuarter('datmons__order__ngayOrder')) \
             .values('quy', 'ten', 'doanhThu') \
             .order_by('quy')
 
