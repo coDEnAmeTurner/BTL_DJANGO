@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'DatDoAnBEApp.apps.DatdoanbeappConfig',
     'rest_framework',
     'oauth2_provider',
-    'drf_yasg',
+    # 'drf_yasg',
     'cloudinary',
     'corsheaders'
 ]
@@ -88,7 +88,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'datdoandb',
         'USER': 'root',
-        'PASSWORD': 'Admin@123',
+        'PASSWORD': '123456',
         'HOST': ''
     }
 }
@@ -153,3 +153,8 @@ cloudinary.config(
     api_key="117826738689585",
     api_secret="IW8hKIZcDy9-uvLEpM6XSsA708U"
 )
+
+# pkVV50s8T98xPUN4cb6xeaOOEzuFXuMSom4tsLeR
+# WIfGt0iG7tzPlrXU81zZgK8UAiAhKnrNnxCkfxQNjnSbCazqkUSf6MkKsKBtYllDS1G0wCq1o5J68pHYUNAxLjkr8r6hm8OKugeY885CX7qIjiZwuwptrlRQPMWdcXVP
+
+# http://172.20.10.2:8000/

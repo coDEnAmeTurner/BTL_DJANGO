@@ -8,7 +8,7 @@ from rest_framework import viewsets, generics, parsers, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from . import perms
+from . import perms, serializers
 from .models import *
 from .serializers import *
 
@@ -41,6 +41,8 @@ class UserViewSet(viewsets.ViewSet):
             userType=request.data['userType'],
             avatar=res['secure_url']
         )
+        user.set_password(request.data['password'])
+        user.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
     @action(methods=['post'], detail=True, url_path='shops')
@@ -69,7 +71,7 @@ class UserViewSet(viewsets.ViewSet):
         return Response(UserSerializer(request.user).data)
 
 
-class ShopViewSet(viewsets.ViewSet, generics.GenericAPIView):
+class ShopViewSet(viewsets.ViewSet):
     queryset = Shop.objects.all()
     serializer_class = ShopSerializer
 
@@ -102,6 +104,14 @@ class CategoryViewSet(viewsets.ViewSet, generics.CreateAPIView):
             return [perms.UpdateCategoryPermission()]
 
         return [permissions.AllowAny()]
+
+    def create(self, request):
+        user = request.user
+        name = request.query_params.get('name')
+        cate, created = Category.objects.get_or_create(ten=name, shopUser=user)
+        if created:
+            return Response({'error': 'Category đã tồn tại'}, status=status.HTTP_204_NO_CONTENT)
+        return Response(serializers.CategorySerializer(cate).data, status=status.HTTP_201_CREATED)
 
     @action(methods=['patch'], detail=True, url_path='update-ten')
     def update_ten(self, request, pk):
